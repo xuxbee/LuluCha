@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 功能键：稍灰一档的玻璃层，与字母键区分 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="270"
+                android:startColor="#DDE4EE"
+                android:endColor="#D2DAE6" />
+            <corners android:radius="10dp" />
+            <stroke android:width="1dp" android:color="#409AA4B5" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="270"
+                android:startColor="#F0F3F8"
+                android:endColor="#E6EBF2" />
+            <corners android:radius="10dp" />
+            <stroke android:width="1dp" android:color="#409AA4B5" />
+        </shape>
+    </item>
+</selector>

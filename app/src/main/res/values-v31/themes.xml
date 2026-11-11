@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Android 12+ 系统启动画面（SplashScreen）：
+         背景与图标都设成透明，避免「点图标先闪一下应用图标」，
+         直接露出桌面再由 20% 透明白界面浮现 -->
+    <style name="Theme.QuickLaunch" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">@color/accent_dim</item>
+        <item name="colorSurface">@color/bg_elevated</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="android:colorBackground">@color/bg</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
+        <!--
+            系统启动画面用纯白底（与布局里的 launchCover 同色）：
+            图标保持透明、动画时长 0 → 启动瞬间是一块干净的白，
+            不会再闪应用图标，随后由 launchCover 淡出到界面
+        -->
+        <item name="android:windowSplashScreenBackground" tools:targetApi="s">@color/launch_cover</item>
+        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="s">@drawable/splash_blank</item>
+        <item name="android:windowSplashScreenAnimationDuration" tools:targetApi="s">0</item>
+    </style>
+</resources>

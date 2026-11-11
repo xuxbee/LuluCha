@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 白色主题 -->
+<resources>
+    <!-- 面板（操作界面）底色：不透明近白，也是单手模式下那块「卡片」的颜色 -->
+    <color name="window_bg">#FAFBFF</color>
+    <!--
+        面板外的「雾面」：10% 白，压在模糊后的桌面上，做出毛玻璃那种柔化。
+        真正的模糊由 applyOutsideBlur() 请系统做（Android 12+ 的 window blur）；
+        系统不支持时这一层薄雾还在，也不至于直接看到清晰的桌面。
+    -->
+    <color name="outside_scrim">#1AFFFFFF</color>
+    <!-- 系统启动画面（Android 12+）底色：纯白不透明、图标透明，冷启动不闪图标 -->
+    <color name="launch_cover">#FFFFFF</color>
+    <!-- 不透明白：对话框、需要完全清晰的地方用 -->
+    <color name="bg">#F6F8FB</color>
+    <color name="bg_glass">#B3FFFFFF</color>
+    <color name="bg_keyboard">#C2FFFFFF</color>
+    <color name="bg_elevated">#FFFFFF</color>
+    <color name="key_bg">#FFFFFF</color>
+    <color name="key_bg_pressed">#E2E8F0</color>
+    <color name="key_special">#EEF1F6</color>
+    <color name="accent">#4C8DFF</color>
+    <color name="accent_dim">#D6E4FF</color>
+    <color name="text_primary">#1A2233</color>
+    <color name="text_secondary">#5D6B80</color>
+    <color name="text_tertiary">#9AA4B5</color>
+    <color name="divider">#E4E9F0</color>
+</resources>

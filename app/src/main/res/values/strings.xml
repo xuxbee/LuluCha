@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">噜噜查</string>
+    <string name="search_hint">输入拼音里的字母，如 wx · ix · xn · 77</string>
+    <string name="empty_hint">没有匹配的应用</string>
+    <string name="loading">正在读取已安装应用…</string>
+    <string name="submit">提交</string>
+    <string name="about_title">关于噜噜查</string>
+    <string name="about_body">噜噜查 · 拼音速启\n由 Xú 使用 WorkBuddy 倾心打造\n\n🔒 纯离线运行 —— 不联网、不采集、不上传任何数据\n🛡️ 最小权限 —— 除「查看应用列表」外，不申请任何其他权限\n📱 本地存储 —— 启动记录只保存在你自己的手机里\n\n轻巧、安静、放心使用。</string>
+</resources>

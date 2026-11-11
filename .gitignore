@@ -1,0 +1,18 @@
+# 密钥与签名信息——绝不能提交
+keystore.properties
+keystore/*.jks
+keystore/*.jks.old
+
+# 本机环境
+local.properties
+
+# 构建产物
+.gradle/
+build/
+app/build/
+*.apk.idsig
+
+# IDE
+.idea/
+*.iml
+.DS_Store
