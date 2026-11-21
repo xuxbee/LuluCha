@@ -558,8 +558,12 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
             }
         }
         binding.panelHost.clipToOutline = true
-        // 有轮廓才有投影：卡片浮在模糊背景上，边界更柔
-        binding.panelHost.elevation = if (narrow) dp(PANEL_ELEVATION_DP).toFloat() else 0f
+        // 注意：这里**不能**加 elevation 投影。Android 的投影是轮廓模糊剪影，
+        // 模糊会向轮廓内侧扩散半圈；面板底色是半透明的（用户可调面板不透明度），
+        // 内侧那半圈阴影会透过底色显形——看起来就是「面板里有一个略小于面板的
+        // 白色雾状框」（软羽化边，v3.2.4 已实测确认并删除）。
+        // 卡片的浮起感由圆角 + 背景图/底色承担，不靠投影。
+        binding.panelHost.elevation = 0f
         binding.panelHost.invalidateOutline()
     }
 
@@ -1560,9 +1564,6 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
 
         /** 单手模式面板的圆角半径（dp），0 表示直角（居中模式） */
         const val PANEL_CORNER_DP = 24
-
-        /** 单手模式面板的投影高度（dp），让卡片在模糊背景上有一点浮起感 */
-        const val PANEL_ELEVATION_DP = 6
 
         /** 面板外背景模糊半径（dp，Android 12+ 的系统级窗口模糊） */
         const val BLUR_RADIUS_DP = 24

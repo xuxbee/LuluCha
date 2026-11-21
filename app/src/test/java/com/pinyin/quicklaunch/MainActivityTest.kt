@@ -375,7 +375,10 @@ class MainActivityTest {
 
         activity.setKeyboardSide("right")
         assertTrue("单手模式要按轮廓裁剪（背景图也要一起圆角）", panel.clipToOutline)
-        assertTrue("圆角卡片应有一点投影", panel.elevation > 0f)
+        assertEquals(
+            "面板不能有 elevation 投影（半透明底色下阴影会内透成雾状框）",
+            0f, panel.elevation, 0.001f
+        )
         val narrowOutline = android.graphics.Outline()
         panel.outlineProvider?.getOutline(panel, narrowOutline)
         assertTrue("单手模式轮廓应是圆角", narrowOutline.radius > 0f)
