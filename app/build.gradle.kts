@@ -19,8 +19,8 @@ android {
         applicationId = "com.lulucha.quick"
         minSdk = 24
         targetSdk = 34
-        versionCode = 49
-        versionName = "3.2.0"
+        versionCode = 50
+        versionName = "3.2.1"
     }
 
     signingConfigs {

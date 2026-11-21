@@ -508,6 +508,9 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
             // 2) 圆角/投影：单手模式是浮起的圆角卡片，居中模式必须直角铺满
             applyPanelCorners(narrow)
 
+            // 3) 面板外磨砂：全屏开、单手关（面板外完全透明）
+            applyOutsideBlur()
+
             // 2) 面板不再贴顶，顶部避让要跟着变（见 insets 回调）
             ViewCompat.requestApplyInsets(binding.root)
         }
@@ -1106,6 +1109,11 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
      * 系统不支持跨窗口模糊（部分 ROM 会关掉）时静默跳过：
      * 面板外就退化成「薄雾 + 清晰桌面」，也不难看，不会崩。
      */
+    /**
+     * 面板外的磨砂：只在全屏模式保留（半透明窗口 + 系统背景模糊 = 毛玻璃桌面）。
+     * 单手模式下面板外要**完全透明**，连磨砂都不要，所以这里主动把模糊关掉；
+     * 切换模式时会重新调用，两边互换来去自如。
+     */
     private fun applyOutsideBlur() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
         val wm = runCatching {
@@ -1114,9 +1122,16 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
         if (!runCatching { wm.isCrossWindowBlurEnabled }.getOrDefault(false)) return
         runCatching {
             val lp = window.attributes
-            lp.flags = lp.flags or android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND
-            window.attributes = lp
-            window.setBackgroundBlurRadius(dp(BLUR_RADIUS_DP))
+            if (isNarrow()) {
+                // 单手模式：关掉磨砂，面板外直接透出桌面
+                lp.flags = lp.flags and android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND.inv()
+                window.attributes = lp
+                window.setBackgroundBlurRadius(0)
+            } else {
+                lp.flags = lp.flags or android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND
+                window.attributes = lp
+                window.setBackgroundBlurRadius(dp(BLUR_RADIUS_DP))
+            }
         }
     }
 

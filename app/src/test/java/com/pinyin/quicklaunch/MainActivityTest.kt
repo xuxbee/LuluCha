@@ -356,13 +356,15 @@ class MainActivityTest {
     }
 
     @Test
-    fun `搜索栏左右边距比按键区更窄`() {
+    fun `搜索栏保持原宽度但上下收窄`() {
         val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
         val bar = activity.findViewById<View>(R.id.searchBar)
         val lp = bar.layoutParams as android.widget.LinearLayout.LayoutParams
-        val d24 = (24 * activity.resources.displayMetrics.density + 0.5f).toInt()
-        assertEquals("左缩窄到 24dp", d24, lp.marginStart)
-        assertEquals("右缩窄到 24dp", d24, lp.marginEnd)
+        val d14 = (14 * activity.resources.displayMetrics.density + 0.5f).toInt()
+        assertEquals("左右边距恢复 14dp", d14, lp.marginStart)
+        assertEquals(d14, lp.marginEnd)
+        assertEquals("上下内边距收窄到 9dp", 9 * activity.resources.displayMetrics.density.toInt(), bar.paddingTop)
+        assertEquals(9 * activity.resources.displayMetrics.density.toInt(), bar.paddingBottom)
     }
 
     @Test
