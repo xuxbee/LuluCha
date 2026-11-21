@@ -62,6 +62,17 @@ class PinyinKeyboardView @JvmOverloads constructor(
             if (mode == MODE_QWERTY) build()
         }
 
+    /**
+     * 按键底色不透明度（20~100）。只改每个按键背景的 alpha，
+     * 文字保持原色，让按键透出下面的面板底色，制造更轻的玻璃感。
+     * build() 重建按键后也会重新应用一次。
+     */
+    var keyAlphaPct: Int = 100
+        set(value) {
+            field = value.coerceIn(20, 100)
+            applyKeyAlpha()
+        }
+
     var mode: Int = MODE_T9
         set(value) {
             if (field == value) return
@@ -81,6 +92,21 @@ class PinyinKeyboardView @JvmOverloads constructor(
     fun build() {
         removeAllViews()
         if (mode == MODE_T9) buildT9() else buildQwerty()
+        applyKeyAlpha()
+    }
+
+    /** 把不透明度写到所有按键的背景上（mutate 避免共享 drawable 互相影响） */
+    private fun applyKeyAlpha() {
+        val alpha = (keyAlphaPct * 255) / 100
+        for (i in 0 until childCount) {
+            val row = getChildAt(i) as? ViewGroup ?: continue
+            for (j in 0 until row.childCount) {
+                val cell = row.getChildAt(j)
+                val bg = cell.background?.mutate() ?: continue
+                bg.alpha = alpha
+                cell.background = bg
+            }
+        }
     }
 
     // ---------------------------------------------------------------- T9

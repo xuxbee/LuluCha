@@ -355,6 +355,48 @@ class MainActivityTest {
     }
 
     @Test
+    fun `按键不透明度可调且应用到每个按键背景`() {
+        val appCtx = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        val prefs = Prefs(appCtx)
+        prefs.keyAlpha = 40
+
+        val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val keyboard = activity.findViewById<PinyinKeyboardView>(R.id.keyboard)
+
+        // onCreate 应按 prefs.keyAlpha 应用到键盘
+        assertEquals(40, keyboard.keyAlphaPct)
+
+        // 找一个按键（有背景的 FrameLayout），背景 alpha 应约等于 40% 的 255
+        var key: android.view.View? = null
+        for (i in 0 until keyboard.childCount) {
+            val row = keyboard.getChildAt(i) as android.view.ViewGroup
+            for (j in 0 until row.childCount) {
+                val cell = row.getChildAt(j)
+                if (cell.background != null && cell is android.widget.FrameLayout) {
+                    key = cell
+                    break
+                }
+            }
+            if (key != null) break
+        }
+        assertNotNull("键盘里应存在带背景的按键", key)
+        assertEquals("按键背景 alpha 应为 40%", 102, key!!.background.alpha)
+
+        // 切到 26 键重建后 alpha 依然要生效
+        keyboard.keyAlphaPct = 100
+        keyboard.mode = PinyinKeyboardView.MODE_QWERTY
+        assertEquals(255, keyboard.getChildAt(0).let { row ->
+            (row as android.view.ViewGroup).getChildAt(0).background.alpha
+        })
+
+        // 越界值要被夹回 20~100
+        prefs.keyAlpha = 5
+        assertEquals(20, prefs.keyAlpha)
+        prefs.keyAlpha = 150
+        assertEquals(100, prefs.keyAlpha)
+    }
+
+    @Test
     fun `搜索栏压矮并位于快捷入口与列表之间`() {
         val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
         val bar = activity.findViewById<View>(R.id.searchBar)

@@ -90,6 +90,16 @@ class Prefs(context: Context) {
         }
 
     /**
+     * 键盘按键不透明度：20~100（100 = 完全不透明）。
+     * 只调按键本身的底色，面板底色由 [panelAlpha] 控制，互不影响。
+     */
+    var keyAlpha: Int
+        get() = sp.getInt("key_alpha", 100)
+        set(value) {
+            sp.edit().putInt("key_alpha", value.coerceIn(20, 100)).apply()
+        }
+
+    /**
      * 单手模式下、操作面板外的背景：false = 完全透明（默认），true = 磨砂模糊。
      *
      * 备注一下两种效果的区别，供用户自己选择：

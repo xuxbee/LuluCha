@@ -130,6 +130,7 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
         binding.keyboard.mode = prefs.keyboardMode
         binding.keyboard.uppercase = prefs.keyboardUppercase
         binding.keyboard.heightScale = prefs.keyHeight / 100f
+        binding.keyboard.keyAlphaPct = prefs.keyAlpha
         applyPanelBackground()
         applyKeyboardSide()
         updateModeLabel()
@@ -1076,6 +1077,56 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
             .show()
     }
 
+    /** 键盘按键不透明度：20~100 拖动实时预览，只调按键底色，面板底色不受影响 */
+    private fun showKeyAlphaDialog() {
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(24), dp(14), dp(24), dp(4))
+        }
+
+        val label = TextView(this).apply {
+            text = "${prefs.keyAlpha}%"
+            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.text_secondary))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            gravity = Gravity.END
+        }
+        container.addView(
+            label,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        )
+
+        val seek = SeekBar(this).apply {
+            max = 100
+            progress = prefs.keyAlpha
+            setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(sb: SeekBar, p: Int, fromUser: Boolean) {
+                    label.text = "$p%"
+                    prefs.keyAlpha = p.coerceAtLeast(20)
+                    binding.keyboard.keyAlphaPct = prefs.keyAlpha
+                }
+
+                override fun onStartTrackingTouch(sb: SeekBar) {}
+                override fun onStopTrackingTouch(sb: SeekBar) {}
+            })
+        }
+        container.addView(
+            seek,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        )
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("按键不透明度（只调按键底色，低于 100 会透出面板底色）")
+            .setView(container)
+            .setPositiveButton("完成", null)
+            .show()
+    }
+
     /**
      * 单手模式下面板外的背景：完全透明（默认）或磨砂模糊。
      * 弹窗里把两种效果的区别和「启动闪一下」的原因备注出来，让用户自己选。
@@ -1286,6 +1337,7 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
             "背景不透明度：${prefs.bgAlpha}%",
             "深浅模式：${when (prefs.appearance) { 1 -> "浅色"; 2 -> "深色"; else -> "跟随系统" }}",
             "面板不透明度：${prefs.panelAlpha}%",
+            "按键不透明度：${prefs.keyAlpha}%",
             "单手面板外：${if (prefs.narrowOutsideBlur) "磨砂模糊" else "全透明"}",
             "刷新应用列表",
             "清除启动次数记录",
@@ -1312,9 +1364,10 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
                     6 -> showBgAlphaDialog()
                     7 -> showAppearanceDialog()
                     8 -> showPanelAlphaDialog()
-                    9 -> showNarrowOutsideDialog()
-                    10 -> manualRefresh()
-                    11 -> {
+                    9 -> showKeyAlphaDialog()
+                    10 -> showNarrowOutsideDialog()
+                    11 -> manualRefresh()
+                    12 -> {
                         prefs.clearUsage()
                         allApps.forEach {
                             it.useCount = 0
@@ -1323,7 +1376,7 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
                         refresh()
                         toast("已清除")
                     }
-                    12 -> showAbout()
+                    13 -> showAbout()
                 }
             }
             .setNegativeButton("关闭", null)
