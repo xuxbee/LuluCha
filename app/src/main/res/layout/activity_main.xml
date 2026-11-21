@@ -252,6 +252,50 @@
             </LinearLayout>
         </LinearLayout>
 
+        <!-- 搜索输入框（在快捷入口和应用列表之间，压矮一档；TextView 承接自绘键盘，不唤起系统输入法） -->
+        <LinearLayout
+            android:id="@+id/searchBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="14dp"
+            android:layout_marginBottom="6dp"
+            android:background="@drawable/bg_search"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="14dp"
+            android:paddingTop="5dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="5dp">
+
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_search" />
+
+            <TextView
+                android:id="@+id/tvQuery"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:letterSpacing="0.10"
+                android:maxLines="1"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp" />
+
+            <ImageButton
+                android:id="@+id/btnClear"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="清空"
+                android:padding="8dp"
+                android:src="@drawable/ic_close"
+                android:visibility="gone" />
+        </LinearLayout>
+
         <!-- 结果区（双列网格） -->
         <FrameLayout
             android:layout_width="match_parent"
@@ -287,50 +331,6 @@
                 android:indeterminateTint="@color/accent"
                 android:visibility="gone" />
         </FrameLayout>
-
-        <!-- 搜索输入框（紧贴键盘上方，用 TextView 承接自绘键盘，不唤起系统输入法） -->
-        <LinearLayout
-            android:id="@+id/searchBar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
-            android:layout_marginTop="6dp"
-            android:layout_marginEnd="14dp"
-            android:layout_marginBottom="8dp"
-            android:background="@drawable/bg_search"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingStart="14dp"
-            android:paddingTop="9dp"
-            android:paddingEnd="8dp"
-            android:paddingBottom="9dp">
-
-            <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:src="@drawable/ic_search" />
-
-            <TextView
-                android:id="@+id/tvQuery"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
-                android:layout_weight="1"
-                android:letterSpacing="0.10"
-                android:maxLines="1"
-                android:textColor="@color/text_primary"
-                android:textSize="20sp" />
-
-            <ImageButton
-                android:id="@+id/btnClear"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="清空"
-                android:padding="8dp"
-                android:src="@drawable/ic_close"
-                android:visibility="gone" />
-        </LinearLayout>
 
         <!-- 自绘键盘（顶部无分隔线，面板透明，只保留按键样式） -->
         <com.pinyin.quicklaunch.PinyinKeyboardView

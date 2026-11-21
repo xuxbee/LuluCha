@@ -345,12 +345,12 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
     private fun renderQuery(q: String) {
         if (q.isEmpty()) {
             binding.tvQuery.setTextColor(ContextCompat.getColor(this, R.color.text_tertiary))
-            // 提示语用 17sp：单手握持（整列收窄到 75%）时也能完整显示，不被裁掉
-            binding.tvQuery.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
+            // 提示语用 14sp：搜索框已压矮，提示字同步改小
+            binding.tvQuery.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
             binding.tvQuery.text = getString(R.string.search_hint)
         } else {
             binding.tvQuery.setTextColor(ContextCompat.getColor(this, R.color.text_primary))
-            binding.tvQuery.setTextSize(TypedValue.COMPLEX_UNIT_SP, 22f)
+            binding.tvQuery.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
             val sp = SpannableString(q + "▏")
             sp.setSpan(
                 ForegroundColorSpan(ContextCompat.getColor(this, R.color.accent)),

@@ -356,15 +356,26 @@ class MainActivityTest {
     }
 
     @Test
-    fun `搜索栏保持原宽度但上下收窄`() {
+    fun `搜索栏压矮并位于快捷入口与列表之间`() {
         val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
         val bar = activity.findViewById<View>(R.id.searchBar)
         val lp = bar.layoutParams as android.widget.LinearLayout.LayoutParams
         val d14 = (14 * activity.resources.displayMetrics.density + 0.5f).toInt()
-        assertEquals("左右边距恢复 14dp", d14, lp.marginStart)
+        assertEquals("左右边距保持 14dp", d14, lp.marginStart)
         assertEquals(d14, lp.marginEnd)
-        assertEquals("上下内边距收窄到 9dp", 9 * activity.resources.displayMetrics.density.toInt(), bar.paddingTop)
-        assertEquals(9 * activity.resources.displayMetrics.density.toInt(), bar.paddingBottom)
+        assertEquals("上下内边距压矮到 5dp", 5 * activity.resources.displayMetrics.density.toInt(), bar.paddingTop)
+        assertEquals(5 * activity.resources.displayMetrics.density.toInt(), bar.paddingBottom)
+
+        // 位置：contentRoot 里顺序应为 headerBar → payRow → searchBar → 结果区 → keyboard
+        val content = bar.parent as android.view.ViewGroup
+        val indexOf = { v: View -> content.indexOfChild(v) }
+        val pay = indexOf(activity.findViewById(R.id.payRow))
+        val search = indexOf(bar)
+        val list = indexOf(activity.findViewById<View>(R.id.rvApps).parent as View)
+        val kb = indexOf(activity.findViewById(R.id.keyboard))
+        assertTrue("搜索框应在快捷入口下方", search > pay)
+        assertTrue("搜索框应在应用列表上方", search < list)
+        assertTrue("键盘应在最底部", kb > list)
     }
 
     @Test
