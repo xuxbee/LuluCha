@@ -1085,37 +1085,73 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
     /**
      * 单手模式下面板外的背景：完全透明（默认）或磨砂模糊。
      * 弹窗里把两种效果的区别和「启动闪一下」的原因备注出来，让用户自己选。
+     * 注意：不用 setMessage + setSingleChoiceItems 组合（Material 对话框里互斥，
+     * 选项列表可能不显示），改用自定义视图：说明文字 + RadioButton。
      */
     private fun showNarrowOutsideDialog() {
-        val names = arrayOf(
-            "全透明（面板外直接透出桌面，默认）",
-            "磨砂模糊（面板外毛玻璃）"
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(24), dp(14), dp(24), dp(4))
+        }
+
+        // 顶部备注：为什么要给这个开关
+        val hint = TextView(this).apply {
+            text =
+                "备注：全透明最干净，面板外直接透出桌面；但因为整个窗口是透明的，" +
+                    "部分机型每次启动时，系统先显示的启动画面和实际画面对不上，可能会「闪一下」。" +
+                    "磨砂模糊能让两者差异变小、基本不闪，代价是面板外不是纯透明。\n" +
+                    "（磨砂需要 Android 12+ 且系统允许跨窗口模糊，不满足时两种效果看起来一样）"
+            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.text_tertiary))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+        }
+        container.addView(
+            hint,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = dp(10) }
         )
+
+        val rbTransparent = android.widget.RadioButton(this).apply {
+            text = "全透明（默认，面板外直接透出桌面）"
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            isChecked = !prefs.narrowOutsideBlur
+        }
+        container.addView(rbTransparent)
+
+        val rbBlur = android.widget.RadioButton(this).apply {
+            text = "磨砂模糊（面板外毛玻璃，可减轻启动闪烁）"
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            isChecked = prefs.narrowOutsideBlur
+        }
+        container.addView(
+            rbBlur,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        )
+
+        // 两个单选互相排斥
+        rbTransparent.setOnClickListener {
+            rbTransparent.isChecked = true
+            rbBlur.isChecked = false
+        }
+        rbBlur.setOnClickListener {
+            rbBlur.isChecked = true
+            rbTransparent.isChecked = false
+        }
+
         MaterialAlertDialogBuilder(this)
             .setTitle("单手面板外背景")
-            .setMessage(
-                "小提示，两种效果的区别：\n\n" +
-                    "· 全透明：面板外最干净，直接看到桌面；\n" +
-                    "  但因为整个窗口是透明的，部分机型每次启动时，\n" +
-                    "  系统先显示的启动画面和实际画面对不上，\n" +
-                    "  可能会「闪一下」。\n\n" +
-                    "· 磨砂模糊：面板外盖一层毛玻璃，\n" +
-                    "  启动画面与实际画面差异小，基本不会闪；\n" +
-                    "  代价是面板外不再是纯透明。\n\n" +
-                    "磨砂需要 Android 12+ 且系统允许跨窗口模糊，\n" +
-                    "不满足时两种效果看起来一样（都透出桌面）。"
-            )
-            .setSingleChoiceItems(
-                names,
-                if (prefs.narrowOutsideBlur) 1 else 0
-            ) { dialog, which ->
-                val wantBlur = which == 1
+            .setView(container)
+            .setPositiveButton("确定") { _, _ ->
+                val wantBlur = rbBlur.isChecked
                 if (prefs.narrowOutsideBlur != wantBlur) {
                     prefs.narrowOutsideBlur = wantBlur
                     applyOutsideBlur()
                     toast(if (wantBlur) "面板外已改为磨砂模糊" else "面板外已改为全透明")
                 }
-                dialog.dismiss()
             }
             .setNegativeButton("取消", null)
             .show()
