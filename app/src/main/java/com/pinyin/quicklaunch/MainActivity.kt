@@ -1082,6 +1082,45 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
             .show()
     }
 
+    /**
+     * 单手模式下面板外的背景：完全透明（默认）或磨砂模糊。
+     * 弹窗里把两种效果的区别和「启动闪一下」的原因备注出来，让用户自己选。
+     */
+    private fun showNarrowOutsideDialog() {
+        val names = arrayOf(
+            "全透明（面板外直接透出桌面，默认）",
+            "磨砂模糊（面板外毛玻璃）"
+        )
+        MaterialAlertDialogBuilder(this)
+            .setTitle("单手面板外背景")
+            .setMessage(
+                "小提示，两种效果的区别：\n\n" +
+                    "· 全透明：面板外最干净，直接看到桌面；\n" +
+                    "  但因为整个窗口是透明的，部分机型每次启动时，\n" +
+                    "  系统先显示的启动画面和实际画面对不上，\n" +
+                    "  可能会「闪一下」。\n\n" +
+                    "· 磨砂模糊：面板外盖一层毛玻璃，\n" +
+                    "  启动画面与实际画面差异小，基本不会闪；\n" +
+                    "  代价是面板外不再是纯透明。\n\n" +
+                    "磨砂需要 Android 12+ 且系统允许跨窗口模糊，\n" +
+                    "不满足时两种效果看起来一样（都透出桌面）。"
+            )
+            .setSingleChoiceItems(
+                names,
+                if (prefs.narrowOutsideBlur) 1 else 0
+            ) { dialog, which ->
+                val wantBlur = which == 1
+                if (prefs.narrowOutsideBlur != wantBlur) {
+                    prefs.narrowOutsideBlur = wantBlur
+                    applyOutsideBlur()
+                    toast(if (wantBlur) "面板外已改为磨砂模糊" else "面板外已改为全透明")
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
     private fun applyBackground() {
         val f = bgFile()
         if (!f.exists()) {
@@ -1103,16 +1142,10 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
     }
 
     /**
-     * 面板外「透明模糊」：Android 12+ 可以请系统把窗口背后的内容（桌面）做高斯模糊，
-     * 再叠上 outsideTap 那层 15% 白雾，就是毛玻璃的感觉。
-     *
-     * 系统不支持跨窗口模糊（部分 ROM 会关掉）时静默跳过：
-     * 面板外就退化成「薄雾 + 清晰桌面」，也不难看，不会崩。
-     */
-    /**
-     * 面板外的磨砂：只在全屏模式保留（半透明窗口 + 系统背景模糊 = 毛玻璃桌面）。
-     * 单手模式下面板外要**完全透明**，连磨砂都不要，所以这里主动把模糊关掉；
-     * 切换模式时会重新调用，两边互换来去自如。
+     * 面板外的磨砂：全屏模式始终保留（半透明窗口 + 系统背景模糊 = 毛玻璃桌面）。
+     * 单手模式下由设置里的「单手面板外」开关决定（见 [showNarrowOutsideDialog]）：
+     * 默认完全透明（连磨砂都不要，直接透出桌面，但部分机型启动时会闪一下），
+     * 可切换为磨砂模糊减轻闪烁；切换模式时会重新调用，两边互换来去自如。
      */
     private fun applyOutsideBlur() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
@@ -1122,15 +1155,17 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
         if (!runCatching { wm.isCrossWindowBlurEnabled }.getOrDefault(false)) return
         runCatching {
             val lp = window.attributes
-            if (isNarrow()) {
-                // 单手模式：关掉磨砂，面板外直接透出桌面
-                lp.flags = lp.flags and android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND.inv()
-                window.attributes = lp
-                window.setBackgroundBlurRadius(0)
-            } else {
+            // 全屏模式恒开磨砂；单手模式跟开关走（默认关 = 全透明）
+            val wantBlur = !isNarrow() || prefs.narrowOutsideBlur
+            if (wantBlur) {
                 lp.flags = lp.flags or android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND
                 window.attributes = lp
                 window.setBackgroundBlurRadius(dp(BLUR_RADIUS_DP))
+            } else {
+                // 完全透明：关掉磨砂，面板外直接透出桌面
+                lp.flags = lp.flags and android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND.inv()
+                window.attributes = lp
+                window.setBackgroundBlurRadius(0)
             }
         }
     }
@@ -1221,6 +1256,7 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
             "背景不透明度：${prefs.bgAlpha}%",
             "深浅模式：${when (prefs.appearance) { 1 -> "浅色"; 2 -> "深色"; else -> "跟随系统" }}",
             "面板不透明度：${prefs.panelAlpha}%",
+            "单手面板外：${if (prefs.narrowOutsideBlur) "磨砂模糊" else "全透明"}",
             "刷新应用列表",
             "清除启动次数记录",
             "关于噜噜查"
@@ -1246,8 +1282,9 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
                     6 -> showBgAlphaDialog()
                     7 -> showAppearanceDialog()
                     8 -> showPanelAlphaDialog()
-                    9 -> manualRefresh()
-                    10 -> {
+                    9 -> showNarrowOutsideDialog()
+                    10 -> manualRefresh()
+                    11 -> {
                         prefs.clearUsage()
                         allApps.forEach {
                             it.useCount = 0
@@ -1256,7 +1293,7 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
                         refresh()
                         toast("已清除")
                     }
-                    11 -> showAbout()
+                    12 -> showAbout()
                 }
             }
             .setNegativeButton("关闭", null)

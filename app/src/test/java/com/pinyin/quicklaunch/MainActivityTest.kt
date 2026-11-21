@@ -418,6 +418,27 @@ class MainActivityTest {
     }
 
     @Test
+    fun `单手面板外默认全透明且可切换磨砂模糊`() {
+        val appCtx = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        val prefs = Prefs(appCtx)
+        prefs.narrowOutsideBlur = false
+
+        // 默认（false = 全透明）：保持旧行为，面板外直接透出桌面
+        assertFalse("默认应为全透明（不是磨砂）", prefs.narrowOutsideBlur)
+
+        // 切到磨砂模糊后要能持久化，重建 Activity 也读得回来
+        prefs.narrowOutsideBlur = true
+        val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        assertTrue(
+            "设置项应为磨砂模糊",
+            Prefs(activity).narrowOutsideBlur
+        )
+        // 切回全透明再持久化一次，确认来回切换都没问题
+        prefs.narrowOutsideBlur = false
+        assertFalse(Prefs(appCtx).narrowOutsideBlur)
+    }
+
+    @Test
     fun `应用列表缓存可写入并读回`() {
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
         PinyinEngine.ensureLoaded(ctx)

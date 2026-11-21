@@ -88,4 +88,20 @@ class Prefs(context: Context) {
         set(value) {
             sp.edit().putInt("panel_alpha", value.coerceIn(20, 100)).apply()
         }
+
+    /**
+     * 单手模式下、操作面板外的背景：false = 完全透明（默认），true = 磨砂模糊。
+     *
+     * 备注一下两种效果的区别，供用户自己选择：
+     * - 完全透明：面板外直接透出桌面，最干净；但因为窗口整体是透明的，
+     *   部分机型每次启动时系统先展示的启动快照和真正的画面对不上，
+     *   会「闪一下」。
+     * - 磨砂模糊：面板外盖一层毛玻璃（需 Android 12+ 且系统允许跨窗口模糊），
+     *   启动快照和实际画面差异小，基本不会闪；代价是面板外不是纯透明。
+     */
+    var narrowOutsideBlur: Boolean
+        get() = sp.getBoolean("narrow_outside_blur", false)
+        set(value) {
+            sp.edit().putBoolean("narrow_outside_blur", value).apply()
+        }
 }
