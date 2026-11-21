@@ -99,7 +99,7 @@ class MainActivityTest {
     }
 
     @Test
-    fun `长按退格连续删除`() {
+    fun `长按退格清空全部输入`() {
         val controller = Robolectric.buildActivity(MainActivity::class.java).setup()
         val activity = controller.get()
         val keyboard = activity.findViewById<PinyinKeyboardView>(R.id.keyboard)
@@ -113,14 +113,15 @@ class MainActivityTest {
         // T9 最底行：清空 / 0 / 退格
         val row = keyboard.getChildAt(4) as android.widget.LinearLayout
         val back = row.getChildAt(2)
-        assertTrue("长按退格应触发连删", back.performLongClick())
-        assertTrue("长按先删一个: " + tvQuery.text, tvQuery.text.toString().startsWith("ab"))
+        assertTrue("长按退格应触发清空", back.performLongClick())
+        assertTrue("长按退格后应清空: " + tvQuery.text,
+            tvQuery.text.toString() == activity.getString(R.string.search_hint))
 
-        // 逐个执行排队的连删任务，验证按住不放会继续删除
+        // 不会再有连删任务排队
         val shadowLooper = org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper())
         shadowLooper.runToNextTask()
-        assertTrue("按住不放应继续删除: " + tvQuery.text,
-            tvQuery.text.toString().startsWith("a"))
+        assertTrue("不应再继续删除",
+            tvQuery.text.toString() == activity.getString(R.string.search_hint))
     }
 
     @Test
@@ -257,18 +258,84 @@ class MainActivityTest {
 
         assertNotNull("顶栏必须有握持切换按钮", btn)
         assertEquals("默认全屏", "全屏", btn.text.toString())
+        assertEquals("状态要落到 prefs", "center", Prefs(activity).keyboardSide)
 
         btn.performClick()
-        assertEquals("第一次点：右单手", "右单手", btn.text.toString())
+        assertEquals("第一次点：居中单手", "居中", btn.text.toString())
+        assertEquals("状态要落到 prefs", "middle", Prefs(activity).keyboardSide)
+
+        btn.performClick()
+        assertEquals("第二次点：右单手", "右单手", btn.text.toString())
         assertEquals("状态要落到 prefs", "right", Prefs(activity).keyboardSide)
 
         btn.performClick()
-        assertEquals("第二次点：左单手", "左单手", btn.text.toString())
+        assertEquals("第三次点：左单手", "左单手", btn.text.toString())
         assertEquals("状态要落到 prefs", "left", Prefs(activity).keyboardSide)
 
         btn.performClick()
-        assertEquals("第三次点：回到全屏", "全屏", btn.text.toString())
+        assertEquals("第四次点：回到全屏", "全屏", btn.text.toString())
         assertEquals("状态要落到 prefs", "center", Prefs(activity).keyboardSide)
+    }
+
+    @Test
+    fun `单手居中模式整列收窄且水平居中贴底`() {
+        val controller = Robolectric.buildActivity(MainActivity::class.java).setup()
+        val activity = controller.get()
+        val content = activity.findViewById<View>(R.id.panelHost)
+        val screen = activity.resources.displayMetrics.widthPixels
+
+        activity.setKeyboardSide("middle")
+        val lp = content.layoutParams as android.widget.FrameLayout.LayoutParams
+        assertEquals("整列应收窄 75%", (screen * 0.75f).toInt(), lp.width)
+        assertEquals(
+            "应水平居中",
+            android.view.Gravity.CENTER_HORIZONTAL,
+            lp.gravity and android.view.Gravity.HORIZONTAL_GRAVITY_MASK
+        )
+        assertEquals(
+            "应竖向贴底",
+            android.view.Gravity.BOTTOM,
+            lp.gravity and android.view.Gravity.VERTICAL_GRAVITY_MASK
+        )
+    }
+
+    @Test
+    fun `面板颜色和不透明度可自定义`() {
+        val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val prefs = Prefs(activity)
+        prefs.panelColor = 0xFFEAF1FA.toInt()
+        prefs.panelAlpha = 60
+        activity.applyPanelBackground()
+
+        val panel = activity.findViewById<View>(R.id.panelHost)
+        val bg = panel.background as android.graphics.drawable.ColorDrawable
+        val expected = 0x99EAF1FA.toInt() // 60% ≈ 0x99
+        assertEquals(expected, bg.color)
+    }
+
+    @Test
+    fun `键盘行高百分比生效`() {
+        // 先写偏好再建 Activity，验证 onCreate 按 prefs.keyHeight 应用缩放
+        val appCtx = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        val prefs = Prefs(appCtx)
+        prefs.keyHeight = 120
+
+        val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val keyboard = activity.findViewById<PinyinKeyboardView>(R.id.keyboard)
+        assertEquals(1.2f, keyboard.heightScale, 0.001f)
+
+        prefs.keyHeight = 200 // 越界值要被夹到 130
+        assertEquals(130, prefs.keyHeight)
+    }
+
+    @Test
+    fun `搜索栏左右边距比按键区更窄`() {
+        val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val bar = activity.findViewById<View>(R.id.searchBar)
+        val lp = bar.layoutParams as android.widget.LinearLayout.LayoutParams
+        val d24 = (24 * activity.resources.displayMetrics.density + 0.5f).toInt()
+        assertEquals("左缩窄到 24dp", d24, lp.marginStart)
+        assertEquals("右缩窄到 24dp", d24, lp.marginEnd)
     }
 
     @Test

@@ -128,6 +128,7 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
         binding.keyboard.mode = prefs.keyboardMode
         binding.keyboard.uppercase = prefs.keyboardUppercase
         binding.keyboard.heightScale = prefs.keyHeight / 100f
+        applyPanelBackground()
         applyKeyboardSide()
         updateModeLabel()
         applyBackground()
@@ -409,10 +410,10 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
             if (prefs.keyboardMode == PinyinKeyboardView.MODE_T9) "T9" else "26键"
     }
 
-    /** 是否单手（左右侧边）模式 */
+    /** 是否单手（收窄）模式：左右侧边和「单手居中」都算 */
     private fun isNarrow(): Boolean {
         val side = prefs.keyboardSide
-        return side == "right" || side == "left"
+        return side == "right" || side == "left" || side == "middle"
     }
 
     /**
@@ -423,14 +424,15 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
      *   顶栏不再顶在状态栏下面。
      */
     /**
-     * 顶栏的握持切换：全屏 → 右单手 → 左单手 → 全屏，点一下换一种。
+     * 顶栏的握持切换：全屏 → 居中 → 右单手 → 左单手 → 全屏，点一下换一种。
      * 和设置里的「键盘位置」是同一个值（prefs.keyboardSide），两边互相同步。
      */
     private fun cycleSideMode() {
         val next = when (prefs.keyboardSide) {
+            "center" -> "middle"
+            "middle" -> "right"
             "right" -> "left"
-            "left" -> "center"
-            else -> "right"
+            else -> "center"
         }
         setKeyboardSide(next)
     }
@@ -438,6 +440,7 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
     /** 按钮文字直接显示当前握持方式，一眼能看出现在是哪种 */
     private fun updateSideLabel() {
         binding.btnSide.text = when (prefs.keyboardSide) {
+            "middle" -> "居中"
             "right" -> "右单手"
             "left" -> "左单手"
             else -> "全屏"
@@ -487,8 +490,11 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
                     clp.width = (rootW * NARROW_RATIO).toInt()
                     clp.height = narrowPanelHeight(rootH, gap)
                     clp.bottomMargin = gap
-                    clp.gravity =
-                        (if (side == "right") Gravity.END else Gravity.START) or Gravity.BOTTOM
+                    clp.gravity = when (side) {
+                        "right" -> Gravity.END or Gravity.BOTTOM
+                        "left" -> Gravity.START or Gravity.BOTTOM
+                        else -> Gravity.CENTER_HORIZONTAL or Gravity.BOTTOM
+                    }
                 } else {
                     clp.width = ViewGroup.LayoutParams.MATCH_PARENT
                     clp.height = ViewGroup.LayoutParams.MATCH_PARENT
@@ -968,6 +974,123 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
         return BitmapFactory.decodeFile(f.absolutePath, opts)
     }
 
+    /**
+     * 面板（操作界面）底色：颜色和不透明度都可在设置里自定义。
+     * 颜色画在 panelHost 上，会同时作为单手卡片和全屏模式的界面底色；
+     * 背景图 ivBg 叠在它上面，所以选了图片时颜色只在图片透明处透出来。
+     */
+    fun applyPanelBackground() {
+        val argb = (prefs.panelColor and 0x00FFFFFF) or
+            ((prefs.panelAlpha * 255 / 100) shl 24)
+        binding.panelHost.background = android.graphics.drawable.ColorDrawable(argb)
+    }
+
+    /** 面板颜色：从一组浅色预设里选（避免深色压住深色文字） */
+    private fun showPanelColorDialog() {
+        val swatches = intArrayOf(
+            0xFFFAFBFF.toInt(), // 近白（默认）
+            0xFFFFFFFF.toInt(), // 纯白
+            0xFFF3F4F6.toInt(), // 浅灰
+            0xFFEAF1FA.toInt(), // 雾蓝
+            0xFFEAF6EF.toInt(), // 薄荷
+            0xFFFFF4E8.toInt(), // 米杏
+            0xFFFBEFF3.toInt(), // 樱粉
+            0xFFF1EFFA.toInt()  // 薰衣草
+        )
+        val names = arrayOf(
+            "近白（默认）", "纯白", "浅灰", "雾蓝",
+            "薄荷", "米杏", "樱粉", "薰衣草"
+        )
+
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            setPadding(dp(12), dp(10), dp(12), dp(2))
+        }
+        swatches.forEachIndexed { i, color ->
+            val dot = View(this)
+            val size = dp(30)
+            dot.background = android.graphics.drawable.GradientDrawable().apply {
+                shape = android.graphics.drawable.GradientDrawable.OVAL
+                setColor(color)
+                setStroke(dp(1), ContextCompat.getColor(this@MainActivity, R.color.divider))
+            }
+            dot.isClickable = true
+            // 选中态描边加粗
+            if (prefs.panelColor == color) {
+                dot.background = android.graphics.drawable.GradientDrawable().apply {
+                    shape = android.graphics.drawable.GradientDrawable.OVAL
+                    setColor(color)
+                    setStroke(dp(3), ContextCompat.getColor(this@MainActivity, R.color.accent))
+                }
+            }
+            dot.setOnClickListener {
+                prefs.panelColor = color
+                applyPanelBackground()
+                toast("面板颜色：${names[i]}")
+            }
+            val lp = LinearLayout.LayoutParams(size, size)
+            lp.setMargins(dp(7), 0, dp(7), 0)
+            row.addView(dot, lp)
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("面板颜色")
+            .setView(row)
+            .setPositiveButton("完成", null)
+            .show()
+    }
+
+    /** 面板不透明度：20~100 拖动实时预览 */
+    private fun showPanelAlphaDialog() {
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(24), dp(14), dp(24), dp(4))
+        }
+
+        val label = TextView(this).apply {
+            text = "${prefs.panelAlpha}%"
+            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.text_secondary))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            gravity = Gravity.END
+        }
+        container.addView(
+            label,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        )
+
+        val seek = SeekBar(this).apply {
+            max = 100
+            progress = prefs.panelAlpha
+            setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(sb: SeekBar, p: Int, fromUser: Boolean) {
+                    label.text = "$p%"
+                    prefs.panelAlpha = p.coerceAtLeast(20)
+                    applyPanelBackground()
+                }
+
+                override fun onStartTrackingTouch(sb: SeekBar) {}
+                override fun onStopTrackingTouch(sb: SeekBar) {}
+            })
+        }
+        container.addView(
+            seek,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        )
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("面板不透明度（低于 100 会透出后面的内容）")
+            .setView(container)
+            .setPositiveButton("完成", null)
+            .show()
+    }
+
     private fun applyBackground() {
         val f = bgFile()
         if (!f.exists()) {
@@ -1080,16 +1203,21 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
     private fun showSettings() {
         val hasBg = bgFile().exists()
         val sideName = when (prefs.keyboardSide) {
-            "right" -> "靠右（右手）"; "left" -> "靠左（左手）"; else -> "居中"
+            "middle" -> "居中（单手）"
+            "right" -> "靠右（右手）"
+            "left" -> "靠左（左手）"
+            else -> "全屏"
         }
         val items = arrayOf(
             "键盘布局：${if (prefs.keyboardMode == PinyinKeyboardView.MODE_T9) "九宫格 T9" else "26 键"}",
             "字母大小写：${if (prefs.keyboardUppercase) "大写" else "小写"}",
-            "键盘高度：${when (prefs.keyHeight) { 85 -> "低"; 115 -> "高"; else -> "标准" }}",
+            "键盘行高：${prefs.keyHeight}%",
             "键盘位置：$sideName",
             "结果显示拼音：${if (prefs.showPinyin) "开" else "关"}",
             "背景图片：${if (hasBg) "更换 / 移除" else "从相册选择"}",
             "背景不透明度：${prefs.bgAlpha}%",
+            "面板颜色",
+            "面板不透明度：${prefs.panelAlpha}%",
             "刷新应用列表",
             "清除启动次数记录",
             "关于噜噜查"
@@ -1113,8 +1241,10 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
                     }
                     5 -> showBackgroundPicker(hasBg)
                     6 -> showBgAlphaDialog()
-                    7 -> manualRefresh()
-                    8 -> {
+                    7 -> showPanelColorDialog()
+                    8 -> showPanelAlphaDialog()
+                    9 -> manualRefresh()
+                    10 -> {
                         prefs.clearUsage()
                         allApps.forEach {
                             it.useCount = 0
@@ -1123,7 +1253,7 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
                         refresh()
                         toast("已清除")
                     }
-                    9 -> showAbout()
+                    11 -> showAbout()
                 }
             }
             .setNegativeButton("关闭", null)
@@ -1131,33 +1261,84 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
     }
 
     private fun showKeySideDialog() {
-        val names = arrayOf("居中", "靠右（右手模式）", "靠左（左手模式）")
-        val values = arrayOf("center", "right", "left")
+        val names = arrayOf(
+            "全屏",
+            "居中（单手，整块收窄放中间）",
+            "靠右（右手模式）",
+            "靠左（左手模式）"
+        )
+        val values = arrayOf("center", "middle", "right", "left")
         val checked = values.indexOf(prefs.keyboardSide).coerceAtLeast(0)
         MaterialAlertDialogBuilder(this)
             .setTitle("键盘位置")
             .setSingleChoiceItems(names, checked) { dialog, which ->
                 setKeyboardSide(values[which])
                 dialog.dismiss()
-                toast(if (values[which] == "center") "键盘已居中" else "键盘已靠${if (values[which] == "right") "右" else "左"}")
+                toast(
+                    when (values[which]) {
+                        "center" -> "已切到全屏"
+                        "middle" -> "单手面板已居中"
+                        "right" -> "单手面板已靠右"
+                        else -> "单手面板已靠左"
+                    }
+                )
             }
             .setNegativeButton("取消", null)
             .show()
     }
 
+    /** 键盘行高：70%~130% 自由拖动，所有按键（T9 与 26 键）统一缩放 */
     private fun showKeyHeightDialog() {
-        val names = arrayOf("低（省屏幕）", "标准", "高（好按）")
-        val values = intArrayOf(85, 100, 115)
-        val checked = values.indexOf(prefs.keyHeight).coerceAtLeast(0)
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(24), dp(14), dp(24), dp(4))
+        }
+
+        val label = TextView(this).apply {
+            text = "${prefs.keyHeight}%"
+            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.text_secondary))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            gravity = Gravity.END
+        }
+        container.addView(
+            label,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        )
+
+        val seek = SeekBar(this).apply {
+            max = 60 // 70~130，offset 70
+            progress = (prefs.keyHeight - 70).coerceIn(0, 60)
+            setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(sb: SeekBar, p: Int, fromUser: Boolean) {
+                    val pct = p + 70
+                    label.text = "$pct%"
+                    prefs.keyHeight = pct
+                    binding.keyboard.heightScale = pct / 100f
+                    binding.keyboard.build()
+                }
+
+                override fun onStartTrackingTouch(sb: SeekBar) {}
+                override fun onStopTrackingTouch(sb: SeekBar) {}
+            })
+        }
+        container.addView(
+            seek,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        )
+
         MaterialAlertDialogBuilder(this)
-            .setTitle("键盘高度")
-            .setSingleChoiceItems(names, checked) { dialog, which ->
-                prefs.keyHeight = values[which]
-                binding.keyboard.heightScale = values[which] / 100f
-                binding.keyboard.build()
-                dialog.dismiss()
+            .setTitle("键盘行高（占标准高度的百分比）")
+            .setView(container)
+            .setPositiveButton("完成") { _, _ ->
+                // 键盘实际高度变了，单手面板按新高度重新校准
+                applyKeyboardSide()
             }
-            .setNegativeButton("取消", null)
             .show()
     }
 

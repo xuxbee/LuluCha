@@ -55,17 +55,34 @@ class Prefs(context: Context) {
             sp.edit().putBoolean("keyboard_uppercase", value).apply()
         }
 
-    /** 键盘高度档位：85（低）/ 100（标准）/ 115（高） */
+    /** 键盘行高百分比：70~130（100 = 标准高度） */
     var keyHeight: Int
         get() = sp.getInt("key_height", 100)
         set(value) {
-            sp.edit().putInt("key_height", value.coerceIn(85, 115)).apply()
+            sp.edit().putInt("key_height", value.coerceIn(70, 130)).apply()
         }
 
-    /** 键盘水平位置：center（居中）/ right（靠右，右手模式）/ left（靠左，左手模式） */
+    /**
+     * 键盘水平位置：
+     * center（全屏）/ middle（单手居中）/ right（靠右，右手模式）/ left（靠左，左手模式）
+     */
     var keyboardSide: String
         get() = sp.getString("keyboard_side", "center") ?: "center"
         set(value) {
             sp.edit().putString("keyboard_side", value).apply()
+        }
+
+    /** 面板（操作界面）底色，ARGB；默认近白 #FAFBFF */
+    var panelColor: Int
+        get() = sp.getInt("panel_color", 0xFFFAFBFF.toInt())
+        set(value) {
+            sp.edit().putInt("panel_color", value).apply()
+        }
+
+    /** 面板底色不透明度：20~100（100 = 完全不透明） */
+    var panelAlpha: Int
+        get() = sp.getInt("panel_alpha", 100)
+        set(value) {
+            sp.edit().putInt("panel_alpha", value.coerceIn(20, 100)).apply()
         }
 }

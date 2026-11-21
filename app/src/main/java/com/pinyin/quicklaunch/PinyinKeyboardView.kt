@@ -198,48 +198,17 @@ class PinyinKeyboardView @JvmOverloads constructor(
         }
     }
 
-    // --------------------------------------------------------- backspace repeat
-
-    private val repeatHandler = android.os.Handler(android.os.Looper.getMainLooper())
-    private var repeatRunnable: Runnable? = null
-
-    /** 退格键统一绑定：单击删一个，按住不放持续删除 */
+    /** 退格键统一绑定：单击删一个，长按直接清空全部输入 */
     private fun bindBackspace(key: View) {
         key.setOnClickListener { listener?.onBackspace() }
         key.setOnLongClickListener {
-            startRepeatDelete()
+            listener?.onClear()
             true
         }
-        // 松手 / 滑出按键区域时停止连删（不消费事件，单击逻辑照常）
-        key.setOnTouchListener { _, ev ->
-            when (ev.actionMasked) {
-                android.view.MotionEvent.ACTION_UP,
-                android.view.MotionEvent.ACTION_CANCEL -> stopRepeatDelete()
-            }
-            false
-        }
-    }
-
-    private fun startRepeatDelete() {
-        listener?.onBackspace() // 长按先删掉一个
-        val r = object : Runnable {
-            override fun run() {
-                listener?.onBackspace()
-                repeatHandler.postDelayed(this, REPEAT_INTERVAL_MS)
-            }
-        }
-        repeatRunnable = r
-        repeatHandler.postDelayed(r, REPEAT_DELAY_MS)
-    }
-
-    private fun stopRepeatDelete() {
-        repeatRunnable?.let { repeatHandler.removeCallbacks(it) }
-        repeatRunnable = null
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        stopRepeatDelete()
     }
 
     // -------------------------------------------------------------- pieces
@@ -368,10 +337,6 @@ class PinyinKeyboardView @JvmOverloads constructor(
     companion object {
         const val MODE_T9 = 0
         const val MODE_QWERTY = 1
-
-        /** 长按退格：立即删一个，随后每 55ms 连删 */
-        private const val REPEAT_DELAY_MS = 200L
-        private const val REPEAT_INTERVAL_MS = 55L
 
         /** 26 键每行高度：单手模式（矮胖，拇指好按） */
         const val QWERTY_H_COMPACT = 40
