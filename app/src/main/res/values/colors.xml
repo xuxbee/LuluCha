@@ -10,8 +10,7 @@
         outsideTap 视图保留，只负责「点面板外退出」。
     -->
     <color name="outside_scrim">#00FFFFFF</color>
-    <!-- 系统启动画面（Android 12+）底色：纯白不透明、图标透明，冷启动不闪图标 -->
-    <color name="launch_cover">#FFFFFF</color>
+    <!-- 系统启动画面（Android 12+）：底色已改透明（见 values-v31/themes.xml），launch_cover 已废弃删除 -->
     <!-- 不透明白：对话框、需要完全清晰的地方用 -->
     <color name="bg">#F6F8FB</color>
     <color name="bg_glass">#B3FFFFFF</color>

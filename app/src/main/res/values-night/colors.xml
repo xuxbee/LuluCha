@@ -5,8 +5,7 @@
     <color name="window_bg">#1F2127</color>
     <!-- 面板外保持全透明 -->
     <color name="outside_scrim">#00FFFFFF</color>
-    <!-- 系统启动画面底色跟着变深，避免深色模式冷启动闪白 -->
-    <color name="launch_cover">#1F2127</color>
+    <!-- 启动画面底色已在 v3.2.3 改为透明，launch_cover 删除 -->
     <!-- 对话框/需要完全清晰的地方 -->
     <color name="bg">#181A1F</color>
     <color name="bg_glass">#B326282E</color>

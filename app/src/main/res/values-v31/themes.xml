@@ -21,11 +21,11 @@
         <item name="android:windowAnimationStyle">@null</item>
         <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
         <!--
-            系统启动画面用纯白底（与布局里的 launchCover 同色）：
-            图标保持透明、动画时长 0 → 启动瞬间是一块干净的白，
-            不会再闪应用图标，随后由 launchCover 淡出到界面
+            系统启动画面底色设为透明：窗口本身已是半透明，若给纯白底（旧版 launch_cover），
+            退出动画时部分 ROM 会把白底「收缩 + 圆角化」，看起来就是一个略小于面板边框的
+            白色半透明方框一闪而过。图标保持透明（splash_blank）即可继续防 ROM 画应用图标。
         -->
-        <item name="android:windowSplashScreenBackground" tools:targetApi="s">@color/launch_cover</item>
+        <item name="android:windowSplashScreenBackground" tools:targetApi="s">@android:color/transparent</item>
         <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="s">@drawable/splash_blank</item>
         <item name="android:windowSplashScreenAnimationDuration" tools:targetApi="s">0</item>
     </style>
