@@ -142,7 +142,7 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
         }
         binding.tvMode.setOnClickListener { toggleMode() }
         binding.btnSettings.setOnClickListener { showSettings() }
-        binding.btnSide.setOnClickListener { cycleSideMode() }
+        binding.btnSide.setOnClickListener { showKeySideDialog() }
 
         // 面板外的纯透明区域：点一下就退出。居中模式下面板铺满全屏，
         // outsideTap 被完全盖住，点不到，所以只对单手模式生效。
@@ -426,20 +426,10 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
      *   顶栏不再顶在状态栏下面。
      */
     /**
-     * 顶栏的握持切换：全屏 → 居中 → 右单手 → 左单手 → 全屏，点一下换一种。
-     * 和设置里的「键盘位置」是同一个值（prefs.keyboardSide），两边互相同步。
+     * 顶栏的握持切换按钮：点一下弹出「键盘位置」选择框（全屏/居中/右/左），
+     * 选完才切换——不再直接循环跳档，避免误触连跳好几档。
+     * 和设置里的「键盘位置」是同一个弹窗、同一个值（prefs.keyboardSide）。
      */
-    private fun cycleSideMode() {
-        val next = when (prefs.keyboardSide) {
-            "center" -> "middle"
-            "middle" -> "right"
-            "right" -> "left"
-            else -> "center"
-        }
-        setKeyboardSide(next)
-    }
-
-    /** 按钮文字直接显示当前握持方式，一眼能看出现在是哪种 */
     private fun updateSideLabel() {
         binding.btnSide.text = when (prefs.keyboardSide) {
             "middle" -> "居中"

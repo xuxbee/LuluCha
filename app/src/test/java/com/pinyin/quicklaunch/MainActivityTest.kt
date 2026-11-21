@@ -251,7 +251,7 @@ class MainActivityTest {
     }
 
     @Test
-    fun `顶栏握持按钮按 全屏-右-左 循环切换`() {
+    fun `顶栏握持按钮点击弹选择框后再切换`() {
         val controller = Robolectric.buildActivity(MainActivity::class.java).setup()
         val activity = controller.get()
         val btn = activity.findViewById<android.widget.TextView>(R.id.btnSide)
@@ -260,21 +260,20 @@ class MainActivityTest {
         assertEquals("默认全屏", "全屏", btn.text.toString())
         assertEquals("状态要落到 prefs", "center", Prefs(activity).keyboardSide)
 
+        // 点一下只弹选择框，不直接切换
         btn.performClick()
-        assertEquals("第一次点：居中单手", "居中", btn.text.toString())
-        assertEquals("状态要落到 prefs", "middle", Prefs(activity).keyboardSide)
+        assertEquals("点击后不能直接切换", "center", Prefs(activity).keyboardSide)
+        val dialog = org.robolectric.shadows.ShadowDialog.getLatestDialog()
+            as? androidx.appcompat.app.AlertDialog
+        assertNotNull("点击后应弹出位置选择框", dialog)
+        val list = dialog!!.listView
+        assertEquals("选择框应有四个选项", 4, list.count)
 
-        btn.performClick()
-        assertEquals("第二次点：右单手", "右单手", btn.text.toString())
-        assertEquals("状态要落到 prefs", "right", Prefs(activity).keyboardSide)
-
-        btn.performClick()
-        assertEquals("第三次点：左单手", "左单手", btn.text.toString())
-        assertEquals("状态要落到 prefs", "left", Prefs(activity).keyboardSide)
-
-        btn.performClick()
-        assertEquals("第四次点：回到全屏", "全屏", btn.text.toString())
-        assertEquals("状态要落到 prefs", "center", Prefs(activity).keyboardSide)
+        // 在选择框里选第 3 项（靠右），确认后才切换
+        org.robolectric.Shadows.shadowOf(list).performItemClick(2)
+        assertEquals("选「靠右」后切到右单手", "right", Prefs(activity).keyboardSide)
+        assertEquals("按钮文字同步更新", "右单手", btn.text.toString())
+        assertTrue("选完应关闭弹窗", !dialog.isShowing)
     }
 
     @Test
