@@ -3,7 +3,7 @@
     <!-- Android 12+ 系统启动画面（SplashScreen）：
          背景与图标都设成透明，避免「点图标先闪一下应用图标」，
          直接露出桌面再由 20% 透明白界面浮现 -->
-    <style name="Theme.QuickLaunch" parent="Theme.Material3.Light.NoActionBar">
+    <style name="Theme.QuickLaunch" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/accent</item>
         <item name="colorOnPrimary">#FFFFFF</item>
         <item name="colorPrimaryContainer">@color/accent_dim</item>

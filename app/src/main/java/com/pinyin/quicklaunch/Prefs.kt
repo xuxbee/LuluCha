@@ -72,11 +72,14 @@ class Prefs(context: Context) {
             sp.edit().putString("keyboard_side", value).apply()
         }
 
-    /** 面板（操作界面）底色，ARGB；默认近白 #FAFBFF */
-    var panelColor: Int
-        get() = sp.getInt("panel_color", 0xFFFAFBFF.toInt())
+    /**
+     * 深浅模式：0 = 跟随系统（系统深色模式时面板变深、文字变白），
+     * 1 = 浅色（浅背景黑字），2 = 深色（深背景白字）。
+     */
+    var appearance: Int
+        get() = sp.getInt("appearance", 0)
         set(value) {
-            sp.edit().putInt("panel_color", value).apply()
+            sp.edit().putInt("appearance", value.coerceIn(0, 2)).apply()
         }
 
     /** 面板底色不透明度：20~100（100 = 完全不透明） */

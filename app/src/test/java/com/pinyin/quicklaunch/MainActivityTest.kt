@@ -300,17 +300,44 @@ class MainActivityTest {
     }
 
     @Test
-    fun `面板颜色和不透明度可自定义`() {
-        val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
-        val prefs = Prefs(activity)
-        prefs.panelColor = 0xFFEAF1FA.toInt()
+    fun `面板底色跟随深浅模式且透明度可调`() {
+        val appCtx = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        val prefs = Prefs(appCtx)
+        prefs.appearance = 1 // 浅色
         prefs.panelAlpha = 60
-        activity.applyPanelBackground()
 
+        val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
         val panel = activity.findViewById<View>(R.id.panelHost)
         val bg = panel.background as android.graphics.drawable.ColorDrawable
-        val expected = 0x99EAF1FA.toInt() // 60% ≈ 0x99
-        assertEquals(expected, bg.color)
+        assertEquals("浅色面板底色近白", 0xFFFAFBFF.toInt() and 0x00FFFFFF, bg.color and 0x00FFFFFF)
+        assertEquals("60% 透明度要生效", (60 * 255 / 100) shl 24, bg.color and 0xFF000000.toInt())
+
+        // 深浅模式映射到 AppCompatDelegate
+        prefs.appearance = 2
+        (activity.application as com.pinyin.quicklaunch.App).applyAppearance()
+        assertEquals(
+            "深色模式应映射到 MODE_NIGHT_YES",
+            androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES,
+            androidx.appcompat.app.AppCompatDelegate.getDefaultNightMode()
+        )
+        prefs.appearance = 0
+        (activity.application as com.pinyin.quicklaunch.App).applyAppearance()
+        assertEquals(
+            "跟随系统应映射到 MODE_NIGHT_FOLLOW_SYSTEM",
+            androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM,
+            androidx.appcompat.app.AppCompatDelegate.getDefaultNightMode()
+        )
+    }
+
+    @Test
+    fun `面板外不再有白色叠加层`() {
+        val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val outside = activity.findViewById<View>(R.id.outsideTap)
+        val bg = outside.background as android.graphics.drawable.ColorDrawable
+        assertEquals(
+            "面板外应全透明（原来的 10% 白雾会透进自定义颜色的面板里）",
+            0, (bg.color ushr 24) and 0xFF
+        )
     }
 
     @Test
@@ -356,19 +383,6 @@ class MainActivityTest {
         panel.outlineProvider?.getOutline(panel, fullOutline)
         assertEquals("居中模式铺满全屏，必须直角", 0f, fullOutline.radius, 0.001f)
         assertEquals("居中模式不要投影", 0f, panel.elevation, 0.001f)
-    }
-
-    @Test
-    fun `面板外是半透明薄雾可以透出下层`() {
-        val controller = Robolectric.buildActivity(MainActivity::class.java).setup()
-        val activity = controller.get()
-        val outside = activity.findViewById<View>(R.id.outsideTap)
-
-        val bg = outside.background as? android.graphics.drawable.ColorDrawable
-        assertNotNull("面板外需要一层薄雾", bg)
-        // 必须带 alpha：下面要透出「系统模糊后的桌面」，实心色块会把桌面挡死
-        val alpha = (bg!!.color ushr 24) and 0xFF
-        assertTrue("薄雾应半透明（当前 alpha=$alpha）", alpha in 1..254)
     }
 
     @Test

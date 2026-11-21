@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 深色主题下的键帽：深灰渐变 + 暗描边 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="270"
+                android:startColor="#3E434C"
+                android:endColor="#343840" />
+            <corners android:radius="10dp" />
+            <stroke android:width="1dp" android:color="#407C828E" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="270"
+                android:startColor="#343840"
+                android:endColor="#2B2F36" />
+            <corners android:radius="10dp" />
+            <stroke android:width="1dp" android:color="#407C828E" />
+        </shape>
+    </item>
+</selector>

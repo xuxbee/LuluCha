@@ -2,6 +2,7 @@ package com.pinyin.quicklaunch
 
 import android.content.ComponentName
 import android.content.Intent
+import android.content.res.Configuration
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -30,6 +31,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -974,70 +976,56 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
         return BitmapFactory.decodeFile(f.absolutePath, opts)
     }
 
+    /** 当前是否深色模式（含「跟随系统」时系统切到深色的情形） */
+    fun isDarkMode(): Boolean =
+        (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
+
     /**
-     * 面板（操作界面）底色：颜色和不透明度都可在设置里自定义。
-     * 颜色画在 panelHost 上，会同时作为单手卡片和全屏模式的界面底色；
-     * 背景图 ivBg 叠在它上面，所以选了图片时颜色只在图片透明处透出来。
+     * 面板（操作界面）底色：颜色跟随深浅模式（window_bg 有 night 版本），
+     * 不透明度仍可在设置里自定义（20~100%）。
+     * 背景图 ivBg 叠在它上面，选了图片时颜色只在图片透明处透出来。
      */
     fun applyPanelBackground() {
-        val argb = (prefs.panelColor and 0x00FFFFFF) or
-            ((prefs.panelAlpha * 255 / 100) shl 24)
+        val base = ContextCompat.getColor(this, R.color.window_bg)
+        val argb = (base and 0x00FFFFFF) or ((prefs.panelAlpha * 255 / 100) shl 24)
         binding.panelHost.background = android.graphics.drawable.ColorDrawable(argb)
+        applyStatusBarContrast()
     }
 
-    /** 面板颜色：从一组浅色预设里选（避免深色压住深色文字） */
-    private fun showPanelColorDialog() {
-        val swatches = intArrayOf(
-            0xFFFAFBFF.toInt(), // 近白（默认）
-            0xFFFFFFFF.toInt(), // 纯白
-            0xFFF3F4F6.toInt(), // 浅灰
-            0xFFEAF1FA.toInt(), // 雾蓝
-            0xFFEAF6EF.toInt(), // 薄荷
-            0xFFFFF4E8.toInt(), // 米杏
-            0xFFFBEFF3.toInt(), // 樱粉
-            0xFFF1EFFA.toInt()  // 薰衣草
-        )
+    /** 状态栏/小白条图标颜色跟深浅模式走：浅色模式用深图标，深色模式用亮图标 */
+    private fun applyStatusBarContrast() {
+        val light = !isDarkMode()
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = light
+            isAppearanceLightNavigationBars = light
+        }
+    }
+
+    /** 深浅模式：跟随系统 / 浅色（浅背景黑字）/ 深色（深背景白字） */
+    private fun showAppearanceDialog() {
         val names = arrayOf(
-            "近白（默认）", "纯白", "浅灰", "雾蓝",
-            "薄荷", "米杏", "樱粉", "薰衣草"
+            "跟随系统（系统深色时面板变深）",
+            "浅色（浅背景 · 黑字）",
+            "深色（深背景 · 白字）"
         )
-
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            setPadding(dp(12), dp(10), dp(12), dp(2))
-        }
-        swatches.forEachIndexed { i, color ->
-            val dot = View(this)
-            val size = dp(30)
-            dot.background = android.graphics.drawable.GradientDrawable().apply {
-                shape = android.graphics.drawable.GradientDrawable.OVAL
-                setColor(color)
-                setStroke(dp(1), ContextCompat.getColor(this@MainActivity, R.color.divider))
-            }
-            dot.isClickable = true
-            // 选中态描边加粗
-            if (prefs.panelColor == color) {
-                dot.background = android.graphics.drawable.GradientDrawable().apply {
-                    shape = android.graphics.drawable.GradientDrawable.OVAL
-                    setColor(color)
-                    setStroke(dp(3), ContextCompat.getColor(this@MainActivity, R.color.accent))
-                }
-            }
-            dot.setOnClickListener {
-                prefs.panelColor = color
-                applyPanelBackground()
-                toast("面板颜色：${names[i]}")
-            }
-            val lp = LinearLayout.LayoutParams(size, size)
-            lp.setMargins(dp(7), 0, dp(7), 0)
-            row.addView(dot, lp)
-        }
-
+        val checked = prefs.appearance
         MaterialAlertDialogBuilder(this)
-            .setTitle("面板颜色")
-            .setView(row)
-            .setPositiveButton("完成", null)
+            .setTitle("深浅模式")
+            .setSingleChoiceItems(names, checked) { dialog, which ->
+                prefs.appearance = which
+                (application as App).applyAppearance()
+                // Activity 会因 uiMode 变化自动重建，回到前台即是新配色
+                dialog.dismiss()
+                toast(
+                    when (which) {
+                        1 -> "浅色模式"
+                        2 -> "深色模式"
+                        else -> "跟随系统"
+                    }
+                )
+            }
+            .setNegativeButton("取消", null)
             .show()
     }
 
@@ -1216,7 +1204,7 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
             "结果显示拼音：${if (prefs.showPinyin) "开" else "关"}",
             "背景图片：${if (hasBg) "更换 / 移除" else "从相册选择"}",
             "背景不透明度：${prefs.bgAlpha}%",
-            "面板颜色",
+            "深浅模式：${when (prefs.appearance) { 1 -> "浅色"; 2 -> "深色"; else -> "跟随系统" }}",
             "面板不透明度：${prefs.panelAlpha}%",
             "刷新应用列表",
             "清除启动次数记录",
@@ -1241,7 +1229,7 @@ class MainActivity : AppCompatActivity(), PinyinKeyboardView.Listener {
                     }
                     5 -> showBackgroundPicker(hasBg)
                     6 -> showBgAlphaDialog()
-                    7 -> showPanelColorDialog()
+                    7 -> showAppearanceDialog()
                     8 -> showPanelAlphaDialog()
                     9 -> manualRefresh()
                     10 -> {

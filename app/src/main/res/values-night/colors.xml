@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 深色模式：深背景 + 白字（浅色版的镜像） -->
+<resources>
+    <!-- 面板底色：深灰蓝，与浅色 #FAFBFF 对应 -->
+    <color name="window_bg">#1F2127</color>
+    <!-- 面板外保持全透明 -->
+    <color name="outside_scrim">#00FFFFFF</color>
+    <!-- 系统启动画面底色跟着变深，避免深色模式冷启动闪白 -->
+    <color name="launch_cover">#1F2127</color>
+    <!-- 对话框/需要完全清晰的地方 -->
+    <color name="bg">#181A1F</color>
+    <color name="bg_glass">#B326282E</color>
+    <color name="bg_keyboard">#C226282E</color>
+    <color name="bg_elevated">#2A2D34</color>
+    <color name="key_bg">#2E3138</color>
+    <color name="key_bg_pressed">#3A3E46</color>
+    <color name="key_special">#272A30</color>
+    <color name="accent">#6CA6FF</color>
+    <color name="accent_dim">#33415C</color>
+    <color name="text_primary">#F2F4F8</color>
+    <color name="text_secondary">#B7BDC9</color>
+    <color name="text_tertiary">#7C828E</color>
+    <color name="divider">#3A3E46</color>
+</resources>
